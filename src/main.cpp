@@ -22,9 +22,9 @@ bool stable = 0 ;     //whether the MIDL sensor is on the line or not
 //Ultra-Sonic Sensor
 const int TRIG =  A3; // TRIG PIN connected to analog pin A3
 constexpr int ECHO  = A4; // ECHO PIN connected to analog pin A4
-#define MAX_DISTANCE 50 // Define Maximum Distance
+#define MAX_CM_DISTANCE 50 // Define Maximum Distance
 #define THRS  500        // Threshold
-NewPing sonar(TRIG, ECHO, MAX_DISTANCE);
+NewPing sonar(TRIG, ECHO, MAX_CM_DISTANCE);
 
 //Servo Motors
 //Futaba S3003 - Servo Standard  -  60°  -  500-3000 μs
