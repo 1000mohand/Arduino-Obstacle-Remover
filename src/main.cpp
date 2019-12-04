@@ -2,20 +2,23 @@
 //Created By DIY Builder & Project Team
 
 #include<NewPing.h>
-#include"main.h"
-//#include<servo>
+#include<main.h>
+#include<servo/Servo.h>
 
 //Motion Motors
 const int ENAB = 3;  //ENAB connected to digital pin 3
-const int MOTOR_AF = 2; // MOTOR_AF connected to digital pin 2
-const int MOTOR_AB = 4; // MOTOR_AB connected to digital pin 4
-const int MOTOR_BF = 7; // MOTOR_BF connected to digital pin 7
-const int MOTOR_BB = 8; // MOTOR_BB connected to digital pin 8
+const int MOTOR_AF = 2;   // MOTOR_AF connected to digital pin 2
+const int MOTOR_AB = 4;   // MOTOR_AB connected to digital pin 4
+const int MOTOR_BF = 7;   // MOTOR_BF connected to digital pin 7
+const int MOTOR_BB = 8;   // MOTOR_BB connected to digital pin 8
+const  byte Speed::MAX_SPEED = 185;
+byte      speed    = 185; // the speed of the motor. range:[0,255]
 
 //Line Sensor
 const int RIGHT = A0; // RIGHT sensor connected to analog pin A0
 const int MIDL = A1;  // MIDL  sensor connected to analog pin A1
 const int LEFT = A2;  // LEFT  sensor connected to analog pin A2
+#define THRS  500        // Line Sensor Threshold
 short RL = 0 ;        //remember the direction of the sensor (+1 Right, -1 left, 0 nothing) 
 bool stable = 0 ;     //whether the MIDL sensor is on the line or not
 
@@ -23,12 +26,15 @@ bool stable = 0 ;     //whether the MIDL sensor is on the line or not
 const int TRIG =  A3; // TRIG PIN connected to analog pin A3
 constexpr int ECHO  = A4; // ECHO PIN connected to analog pin A4
 #define MAX_CM_DISTANCE 50 // Define Maximum Distance
-#define THRS  500        // Threshold
 NewPing sonar(TRIG, ECHO, MAX_CM_DISTANCE);
 
 //Servo Motors
-//Futaba S3003 - Servo Standard  -  60°  -  500-3000 μs
 
+//Futaba S3003 - Servo Standard  -  60°  -  500-3000 μs
+Servo servo_1;
+Servo servo_2;
+Servo servo_3;
+Servo servo_4;
 
 //Debug
 int o_delay = 0;
@@ -55,10 +61,23 @@ Serial.write("test");
 void loop() {
 
   int distance = sonar.ping_cm();
-  /*if (distance == 0) {
+  if (distance == 0)
     distance = 30;
+  if (distance <= 12){
+    Stop();
+    if (o_delay>=1000)
+    Serial.println("Stop!");
+    goto skip; //will not perform any other action and skip to the debug output
   }
-  if(distance <=15) {
+  else if (distance <= 20){
+    //will slow down
+    speed = (distance-12)*11+95;
+  }
+  else{
+    speed = 185;
+  }
+
+  /*if(distance <=15) {
     Stop();
     delay(100);
     turnRight();
@@ -122,8 +141,10 @@ void loop() {
     digitalWrite(LED_BUILTIN,HIGH);
   }
 
+skip:
   ///Other/////////////////////////////////
-    delay(70);
+  constexpr short delay_time = 70;
+  delay(delay_time);
   if (o_delay>=1000){
     Serial.print("Right: ");
     Serial.print(analogRead(RIGHT));
@@ -133,15 +154,17 @@ void loop() {
     Serial.println(analogRead(LEFT));
     Serial.print("Distance :");
     Serial.println(distance);
+    Serial.print("Speed :");
+    Serial.println(speed);
     o_delay=0;
   }
-  else o_delay+=70;
+  else o_delay+=delay_time;
 }// end loop
 
 ////////////////////////////////////////////////////////////////////
 
 void moveForward(){
-  analogWrite(ENAB, 200);
+  analogWrite(ENAB, speed);
   digitalWrite(MOTOR_AF, HIGH);
   digitalWrite(MOTOR_AB, LOW);
   digitalWrite(MOTOR_BF, HIGH);
@@ -149,7 +172,8 @@ void moveForward(){
 }
 
 void Stop() {
-  analogWrite(ENAB, 0);
+  speed = 0;
+  analogWrite(ENAB, speed);
   digitalWrite(MOTOR_AF, LOW);
   digitalWrite(MOTOR_AB, LOW);
   digitalWrite(MOTOR_BF, LOW);
@@ -157,7 +181,7 @@ void Stop() {
 }
 
 void turnRight() {
-  analogWrite(ENAB, 200);
+  analogWrite(ENAB, speed);
   digitalWrite(MOTOR_AF, LOW);
   digitalWrite(MOTOR_AB, LOW);
   digitalWrite(MOTOR_BF, HIGH);
@@ -166,7 +190,7 @@ void turnRight() {
 }
 
 void turnLeft() {
-  analogWrite(ENAB, 200);
+  analogWrite(ENAB, speed);
   digitalWrite(MOTOR_AF, HIGH);
   digitalWrite(MOTOR_AB, LOW);
   digitalWrite(MOTOR_BF, LOW);
