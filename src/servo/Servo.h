@@ -60,7 +60,7 @@
 
 // Architecture specific include
 #if defined(ARDUINO_ARCH_AVR)
-#include "servo/ServoTimers.h"
+#include "ServoTimers.h"
 #else
 #error "should be avr arduino"
 #endif
