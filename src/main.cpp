@@ -12,7 +12,10 @@ constexpr int MOTOR_AF = 2;   // MOTOR_AF connected to digital pin 2
 constexpr int MOTOR_AB = 4;   // MOTOR_AB connected to digital pin 4
 constexpr int MOTOR_BF = 7;   // MOTOR_BF connected to digital pin 7
 constexpr int MOTOR_BB = 8;   // MOTOR_BB connected to digital pin 8
-const  byte Speed::MAX_SPEED = 185;
+
+const  byte Speed::MAX_SPEED = 185; 
+const  byte Speed::MIN_SPEED = 90;
+
 Speed      speed    = 185; // the speed of the motor. range:[0,255]
 
 //Line Sensor
@@ -43,9 +46,6 @@ Servo servo_4;      //the servo that controlls the forth degree of free may not 
 
 //Debug
 int o_delay = 0;
-#define Print(ms) Serial.print(ms);
-#define Println(ms) Serial.println(ms);
-
 
 void setup() 
 {  
@@ -81,46 +81,81 @@ void loop()
   
   //servo_interactive_test();
   //ultrasonic_test();
-  
+  //Gripper_test();
+  int distance;
+{
+  int distance1 = (sonar.ping_cm()); if (distance1 == 0) distance1 = 52;
+  delay(5);
+  int distance2 = (sonar.ping_cm()); if (distance2 == 0) distance2 = 52;
+  delay(5);
+  int distance3 = (sonar.ping_cm()); if (distance3 == 0) distance3 = 52;
+  distance  = (distance1 + distance2 + distance3)/3;
+}
 
-  int distance = sonar.ping_cm();
-  if (distance == 0)
-    distance = 52;
+  if (distance == 0) then distance = 52;
 
   if (distance <= 12){
     
     Stop();
     while (distance < 11) {
-      speed = 85;
+      Println("??!");
+      speed = 95;
       moveBackward();
       delay(5);
-      distance = sonar.ping_cm();
+    {
+      int distance1 = (sonar.ping_cm()); if (distance1 == 0) distance1 = 52;
+      delay(5);
+      int distance2 = (sonar.ping_cm()); if (distance2 == 0) distance1 = 52;
+      delay(5);
+      int distance3 = (sonar.ping_cm()); if (distance3 == 0) distance1 = 52;
+      distance  = (distance1 + distance2 + distance3)/3;
     }
-
-    if (distance > 12)// check if the object is still in position
+      if (distance == 0) then distance = 52;
+      constexpr short delay_time = 5;
+      if (o_delay>=1000){
+        Serial.print("Distance :");
+        Serial.println(distance);
+        Serial.print("Speed :");
+        Serial.println(speed);
+        o_delay=0;
+      }
+      else o_delay+=delay_time;
+    }                                                 
+    Stop();
+    if (distance > 12 ||  distance < 11)// check if the object is in position
     {
       goto skip;      //if not skip to debug and begin new 'void loop()'
     }
     //grip the object
-    servo_softmove(servo_base,  40, 110);
-    servo_softmove(servo_grp ,   2, 160);
-    servo_softmove(servo_base, 110,  40);
+    Println("gripping");
+    servo_softmove(servo_base, 110);
+    Println("gripping");
+    servo_softmove(servo_grp , 155);
+    Println("gripping");
+    servo_softmove(servo_base,  40);
 
-    turnAround( left )  ;
+    Println("turning out");
+    speed = 170;
+    turnAround( left, 300)  ;
     
     //release the object
-    servo_softmove(servo_base, 110);
-    servo_softmove(servo_grp ,   2);
+    Println("releasing");
+    servo_softmove(servo_base, 110, 30);
+    Println("releasing");
+    servo_softmove(servo_grp ,   2, 39);
+    Println("releasing");
     servo_softmove(servo_base,  40); 
 
-    turnAround( right ) ;
+    Println("turning back");
+    speed = 170;
+    turnAround( right, 300) ;
     
     goto skip; //will not perform any other action and skip to the debug output
   
   }
   else if (distance <= 20){
     //will slow down
-    speed = (distance-12)*11+85;
+    speed = (distance-12)*5+95;
   }
   else{
     speed = 175;
@@ -208,8 +243,7 @@ void moveBackward(){
 }
 
 void Stop() {
-  speed = 0;
-  analogWrite(ENAB, speed);
+  analogWrite(ENAB, 0);
   digitalWrite(MOTOR_AF, LOW);
   digitalWrite(MOTOR_AB, LOW);
   digitalWrite(MOTOR_BF, LOW);
@@ -233,47 +267,53 @@ void turnLeft() {
   digitalWrite(MOTOR_BB, HIGH);
 }
 
-
-
-void turnAround(direction dir) 
+void turnAround(direction dir,int time_cs) 
 {  //BY Nagib
-  
+  constexpr float LR_factor = (90.0f)/(75);
   switch(dir)
   {
   case left:
-    for (int fadeValue = 85; fadeValue <=200; fadeValue +=10) {
-      analogWrite(ENAB, fadeValue);
+    for (int fadeValue = 100; fadeValue >0; fadeValue -=10) {
+      analogWrite(ENAB, speed);
       digitalWrite(MOTOR_AF, HIGH);
       digitalWrite(MOTOR_AB, LOW);
       digitalWrite(MOTOR_BF, LOW);
-      digitalWrite(MOTOR_BB, HIGH)
+      digitalWrite(MOTOR_BB, HIGH);
+      delay(time_cs);
     }
     break;
 
   case right:
-    for (int fadeValue = 200; fadeValue >=85; fadeValue -=10) {
-      analogWrite(ENAB, fadeValue);
+    for (int fadeValue = 100; fadeValue >0; fadeValue -=10) {
+      analogWrite(ENAB, speed);
       digitalWrite(MOTOR_AF, LOW);
       digitalWrite(MOTOR_AB, HIGH);
       digitalWrite(MOTOR_BF, HIGH);
       digitalWrite(MOTOR_BB, LOW);
+      delay(time_cs*LR_factor);
     }
+    break;
+
+    default:break;
   }
-  break;
+  Stop();
 }
+
+///test///////////////////////////////////////////////////////////////
 
 void servo_softmove (Servo& myservo, int next, int slowy)
 {
   let prev = myservo.read();
-  for (var i = prev; i<next; i+=10){
+  let sign = (next-prev)/abs(next-prev);
+  for (var i = prev; (next-i)*sign > 0; i+=sign*10){
     myservo.write(i);
-    delay(100);
+    delay(slowy);
   }
   myservo.write(next);
-  delay(100);
+  delay(slowy);
 }
 
-/*void servo_interactive_test()
+inline void servo_interactive_test()
 {
   while (forever) 
   {
@@ -326,12 +366,12 @@ void servo_softmove (Servo& myservo, int next, int slowy)
 }/**/
 
 
-/*void ultrasonic_test()
+inline void ultrasonic_test()
 {
   while(forever)
   {
     Stop();
-    int distance = sonar.ping_cm();
+    int distance = (sonar.ping_cm()+sonar.ping_cm()+sonar.ping_cm())/3;
     if (distance == 0)
       distance = 52;
 
@@ -347,10 +387,10 @@ void servo_softmove (Servo& myservo, int next, int slowy)
   }
 }/**/
 
-/*void Gripper_test()
+inline void Gripper_test()
 {
   Loop{
-    int distance = sonar.ping_cm();
+    int distance = (sonar.ping_cm()+sonar.ping_cm()+sonar.ping_cm())/3;
     if (distance == 0)
       distance = 52;
 
@@ -366,8 +406,8 @@ void servo_softmove (Servo& myservo, int next, int slowy)
 
       //return back
       Println("returningB");
-      servo_softmove(servo_base, 110);
-      servo_softmove(servo_grp ,   2);
+      servo_softmove(servo_base, 110, 30);
+      servo_softmove(servo_grp ,   2, 30);
       servo_softmove(servo_base,  40);
 
       Print("distance"); Println(distance);
