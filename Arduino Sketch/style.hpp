@@ -1,7 +1,7 @@
 #pragma once
 
 //Repeat N times
-#define repeat(N) for(unsigned VLNTWMNC_14882_1998qwerty=0; VLNTWMNC_14882_1998qwerty<N; VLNTWMNC_14882_1998qwerty++) 
+#define repeat(N) for(unsinged VLNTWMNC_14882_1998qwerty=0; VLNTWMNC_14882_1998qwerty<N; VLNTWMNC_14882_1998qwerty++) 
 //VLNTWMNC = very long name that will make no conflicts
 
 //typical use ==> while(forever)

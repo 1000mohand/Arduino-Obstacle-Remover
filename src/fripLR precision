@@ -1,0 +1,58 @@
+//try to add more precision by moving left and right
+    int count = 1, dmin = 52, last = 1;
+    //1- get min while going to right till end
+step1:
+    Loop{
+      speed.pulse_do(turnRight);
+      int distance = (sonar.ping_cm()); if (distance == 0) distance = 52;
+      if (dmin > distance) dmin = distance;
+      if (distance == 52) break;
+      count++;
+    }
+    //** try to get back left if no object found break the action by returning else it will goto step2
+    repeat(count){
+      speed.pulse_do(turnLeft);
+      int distance = (sonar.ping_cm()); if (distance == 0) distance = 52;
+      if (distance < 52) goto step2;
+      count--;
+    }
+    return;
+step2:
+    //2- get min while going to left, count mins, break at higher distance
+    Loop{ //part one get to min
+      speed.pulse_do(turnLeft);
+      int distance = (sonar.ping_cm()); if (distance == 0) distance = 52;
+      if (distance == 52) { //safety check
+        if (count > 0) repeat(count) speed.pulse_do(turnLeft);
+        return; 
+      }
+
+      if (dmin >  distance) dmin = distance;
+      if (dmin >= distance) break;
+      count--;
+    }
+    Loop{//part two get steps count in min range
+      speed.pulse_do(turnLeft);
+      int distance = (sonar.ping_cm()); if (distance == 0) distance = 52;
+
+      if (distance < dmin) {
+        last = 1;
+        dmin = distance;
+      }
+      else if (distance == dmin){
+        last++;
+      }
+      else {
+        goto step3;
+      }
+      count--;
+    }
+step3:
+    repeat(last/2 + 1) speed.pulse_do(turnRight);
+
+    int distance = (sonar.ping_cm()); if (distance == 0) distance = 52;
+    if (distance > dmin){
+      if (count > 0) repeat(count) speed.pulse_do(turnLeft);
+      else if (count < 0) repeat(-count) speed.pulse_do(turnRight);
+      return ;
+    } //finsih LR precision
